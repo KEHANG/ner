@@ -1,3 +1,5 @@
+import os
+import json
 import torch
 import torch.nn as nn
 torch.manual_seed(1)
@@ -73,6 +75,27 @@ class BiLSTM(nn.Module):
     def predict(self, sentences, lengths):
 
         return torch.argmax(self.forward(sentences, lengths), dim=2)
+
+    def save(self, output_dir):
+
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        # save model weights
+        model_file = os.path.join(output_dir, 'model.pt')
+        torch.save(self.state_dict(), model_file)
+
+        # save hyper-parameters
+        hyper_params = {
+                "embedding_dim": self.embedding_dim,
+                "hidden_dim": self.hidden_dim,
+                "lstm_num_layers": self.lstm_num_layers,
+                "batch_size": self.batch_size,
+                "vocab_size": self.vocab_size,
+                "tag_to_ix": self.tag_to_ix
+        }
+
+        with open(os.path.join(output_dir, 'hyper_params.json'), 'w') as f_out:
+            json.dump(hyper_params, f_out, indent=3)
 
 class BiLSTM_CRF(nn.Module):
 
