@@ -1,6 +1,8 @@
+import os
 import argparse
 import torch
 from torch import optim
+from datetime import datetime
 
 import tagger.model
 import tagger.loader 
@@ -16,17 +18,17 @@ parser.add_argument('--dset_file_dev', default='mini_dev.txt', type=str,
                     help='dataset filename for dev')
 parser.add_argument('--dset_file_test', default='mini_test.txt', type=str,
                     help='dataset filename for test')
-parser.add_argument('--batch_size', default=32, type=int,
+parser.add_argument('--batch_size', default=1, type=int,
                     help='batch size')
 parser.add_argument('--num_workers', default=1, type=int,
                     help='_ num_workers')
-parser.add_argument('--epochs', default=600, type=int,
+parser.add_argument('--epochs', default=1000, type=int,
                     help='number of epochs')
 parser.add_argument('--lr', default=0.01, type=float,
                     help='learning rate')
 parser.add_argument('--weight_decay', default=1e-4, type=float,
                     help='weight decay rate')
-parser.add_argument('--print_period', default=40, type=float,
+parser.add_argument('--print_period', default=2, type=float,
                     help='print period')
 parser.add_argument('--embedding_dim', default=10, type=int,
                     help='embedding dimension of each word.')
@@ -51,8 +53,33 @@ def match_eval(tag_seqs_pred, tag_seqs_true, tag_to_ix):
 
     return pos_pred_num.item(), pos_true_num.item(), pos_match_num.item()
 
+def dev_eval(net, dataloader_dev):
+
+  pred_sum, true_sum, match_sum = [0, 0, 0]
+  for dev_batch in dataloader_dev:
+      sentences, lengths, tag_seqs = dev_batch
+      tag_seqs_pred= net.predict(sentences, lengths)
+      pred_num, true_num, match_num = match_eval(tag_seqs_pred, 
+                                                 tag_seqs,
+                                                 net.tag_to_ix)
+
+      pred_sum += pred_num
+      true_sum += true_num
+      match_sum += match_num
+
+  if match_sum == 0:
+      f1 = 0.0
+  else:
+      precision = match_sum/1./(pred_sum)
+      recall = match_sum/1./true_sum
+      f1 = 2*precision*recall/(precision+recall)
+  return f1
 
 def main(args):
+
+    # create work folder
+    work_folder = 'training_folder-{0}'.format(datetime.now())
+    os.mkdir(work_folder)
 
     # load data
     data = tagger.loader.return_data(args.dset_dir, 
@@ -74,6 +101,8 @@ def main(args):
                           lr=args.lr, 
                           weight_decay=args.weight_decay)
     
+    # start training
+    best_f1 = 0.0
     for epoch in range(args.epochs):
         running_loss = 0.0
         for i, batch in enumerate(dataloader):
@@ -93,30 +122,14 @@ def main(args):
             # Print statistics
             running_loss += loss.item()
             if i % args.print_period == (args.print_period-1):
-                pred_sum, true_sum, match_sum = [0, 0, 0]
-                for dev_batch in dataloader_dev:
-                    sentences, lengths, tag_seqs = dev_batch
-                    tag_seqs_pred= net.predict(sentences, lengths)
-                    pred_num, true_num, match_num = match_eval(tag_seqs_pred, 
-                                                               tag_seqs,
-                                                               net.tag_to_ix)
-
-                    pred_sum += pred_num
-                    true_sum += true_num
-                    match_sum += match_num
-
-                print('done eval...')
-                print(match_sum, pred_sum, true_sum)
-                if match_sum == 0:
-                    f1 = 0.0
-                else:
-                    precision = match_sum/1./(pred_sum)
-                    recall = match_sum/1./true_sum
-                    f1 = 2*precision*recall/(precision+recall)
+                f1 = dev_eval(net, dataloader_dev)
                 print('[epoch=%d, batches=%d] train-loss: %.3f dev-f1: %.3f' %
                       (epoch + 1, i + 1, running_loss/(i + 1), f1))
 
-
+                if f1 > best_f1:
+                  best_f1 = f1
+                  output_dir = os.path.join(work_folder, "epoch-{0}-batch-{1}".format(epoch+1, i+1))
+                  net.save(output_dir)
 
 if __name__ == '__main__':
     main(args)
