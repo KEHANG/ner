@@ -78,7 +78,8 @@ def dev_eval(net, dataloader_dev):
 def main(args):
 
     # create work folder
-    work_folder = 'training_folder-{0}'.format(datetime.now())
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    work_folder = 'model-save-{0}'.format(now)
     os.mkdir(work_folder)
 
     # load data
@@ -128,7 +129,7 @@ def main(args):
 
                 if f1 > best_f1:
                   best_f1 = f1
-                  output_dir = os.path.join(work_folder, "epoch-{0}-batch-{1}".format(epoch+1, i+1))
+                  output_dir = os.path.join(work_folder, "epoch-{0:05d}-batch-{1:06d}".format(epoch+1, i+1))
                   net.save(output_dir)
 
 if __name__ == '__main__':
