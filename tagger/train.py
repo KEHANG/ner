@@ -3,6 +3,7 @@ import argparse
 import torch
 from torch import optim
 from datetime import datetime
+from seqeval.metrics import f1_score
 
 import tagger.model
 import tagger.loader 
@@ -53,26 +54,26 @@ def match_eval(tag_seqs_pred, tag_seqs_true, tag_to_ix):
 
     return pos_pred_num.item(), pos_true_num.item(), pos_match_num.item()
 
-def dev_eval(net, dataloader_dev):
+def dev_eval(net, dataloader_dev, ix_to_tag):
 
-  pred_sum, true_sum, match_sum = [0, 0, 0]
+  all_tag_seqs = []
+  all_tag_seqs_pred = []
   for dev_batch in dataloader_dev:
       sentences, lengths, tag_seqs = dev_batch
       tag_seqs_pred= net.predict(sentences, lengths)
-      pred_num, true_num, match_num = match_eval(tag_seqs_pred, 
-                                                 tag_seqs,
-                                                 net.tag_to_ix)
+      for i, tag_seq_pred in enumerate(tag_seqs_pred):
+        length = lengths[i]
+        temp_1 =  []
+        temp_2 = []
+        for j in range(length):
+          temp_1.append(ix_to_tag[tag_seqs[i][j].item()])
+          temp_2.append(ix_to_tag[tag_seq_pred[j].item()])
 
-      pred_sum += pred_num
-      true_sum += true_num
-      match_sum += match_num
-
-  if match_sum == 0:
-      f1 = 0.0
-  else:
-      precision = match_sum/1./(pred_sum)
-      recall = match_sum/1./true_sum
-      f1 = 2*precision*recall/(precision+recall)
+        all_tag_seqs.append(temp_1)
+        all_tag_seqs_pred.append(temp_2)
+  
+  f1 = f1_score(all_tag_seqs, all_tag_seqs_pred)
+      
   return f1
 
 def main(args):
@@ -90,6 +91,7 @@ def main(args):
                                      args.dset_file_dev,
                                      args.dset_file_test)
     dataloader, dataloader_dev, word_to_ix, tag_to_ix = data
+    ix_to_tag = {tag_to_ix[tag] : tag for tag in tag_to_ix}
 
     # build model
     net = tagger.model.BiLSTM(len(word_to_ix), 
@@ -105,6 +107,8 @@ def main(args):
     # start training
     best_f1 = 0.0
     for epoch in range(args.epochs):
+        # TRAIN loop
+        net.train()
         running_loss = 0.0
         for i, batch in enumerate(dataloader):
             # Step 1. Remember that Pytorch accumulates gradients.
@@ -123,7 +127,9 @@ def main(args):
             # Print statistics
             running_loss += loss.item()
             if i % args.print_period == (args.print_period-1):
-                f1 = dev_eval(net, dataloader_dev)
+                # Eval loop
+                net.eval()
+                f1 = dev_eval(net, dataloader_dev, ix_to_tag)
                 print('[epoch=%d, batches=%d] train-loss: %.3f dev-f1: %.3f' %
                       (epoch + 1, i + 1, running_loss/(i + 1), f1))
 
