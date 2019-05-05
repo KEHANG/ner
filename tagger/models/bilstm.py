@@ -115,7 +115,8 @@ class BiLSTM(nn.Module):
                 "lstm_num_layers": self.lstm_num_layers,
                 "batch_size": self.batch_size,
                 "vocab_size": self.vocab_size,
-                "tag_to_ix": self.tag_to_ix
+                "tag_to_ix": self.tag_to_ix,
+                "model_type": 'BiLSTM'
         }
 
         with open(os.path.join(output_dir, 'hyper_params.json'), 'w') as f_out:
