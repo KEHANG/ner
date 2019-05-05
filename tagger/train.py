@@ -3,11 +3,9 @@ import argparse
 import torch
 from torch import optim
 from datetime import datetime
-from seqeval.metrics import f1_score
 
 import tagger.model
-import tagger.loader 
-from tagger.constant import PAD
+import tagger.loader
 
 parser = argparse.ArgumentParser()
 
@@ -38,48 +36,10 @@ parser.add_argument('--hidden_dim', default=8, type=int,
 
 args = parser.parse_args()
 
-def match_eval(tag_seqs_pred, tag_seqs_true, tag_to_ix):
-
-    assert(tag_seqs_pred.shape==tag_seqs_true.shape)
-
-    pos_pred_num = torch.sum((~torch.eq(tag_seqs_pred, tag_to_ix['O'])) & 
-                             (~torch.eq(tag_seqs_pred, tag_to_ix[PAD])))
-
-    pos_true_num = torch.sum((~torch.eq(tag_seqs_true, tag_to_ix['O'])) & 
-                             (~torch.eq(tag_seqs_true, tag_to_ix[PAD])))
-
-    pos_match_num = torch.sum((torch.eq(tag_seqs_pred, tag_seqs_true)) & 
-                              (~torch.eq(tag_seqs_true, tag_to_ix['O'])) &
-                              (~torch.eq(tag_seqs_true, tag_to_ix[PAD])))
-
-    return pos_pred_num.item(), pos_true_num.item(), pos_match_num.item()
-
-def dev_eval(net, dataloader_dev, ix_to_tag):
-
-  all_tag_seqs = []
-  all_tag_seqs_pred = []
-  for dev_batch in dataloader_dev:
-      sentences, lengths, tag_seqs = dev_batch
-      tag_seqs_pred= net.predict(sentences, lengths)
-      for i, tag_seq_pred in enumerate(tag_seqs_pred):
-        length = lengths[i]
-        temp_1 =  []
-        temp_2 = []
-        for j in range(length):
-          temp_1.append(ix_to_tag[tag_seqs[i][j].item()])
-          temp_2.append(ix_to_tag[tag_seq_pred[j].item()])
-
-        all_tag_seqs.append(temp_1)
-        all_tag_seqs_pred.append(temp_2)
-  
-  f1 = f1_score(all_tag_seqs, all_tag_seqs_pred)
-      
-  return f1
-
 def main(args):
 
     # create work folder
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
     work_folder = 'model-save-{0}'.format(now)
     os.mkdir(work_folder)
 
@@ -91,7 +51,6 @@ def main(args):
                                      args.dset_file_dev,
                                      args.dset_file_test)
     dataloader, dataloader_dev, word_to_ix, tag_to_ix = data
-    ix_to_tag = {tag_to_ix[tag] : tag for tag in tag_to_ix}
 
     # build model
     net = tagger.model.BiLSTM(len(word_to_ix), 
@@ -129,7 +88,7 @@ def main(args):
             if i % args.print_period == (args.print_period-1):
                 # Eval loop
                 net.eval()
-                f1 = dev_eval(net, dataloader_dev, ix_to_tag)
+                f1 = net.f1_eval(dataloader_dev)
                 print('[epoch=%d, batches=%d] train-loss: %.3f dev-f1: %.3f' %
                       (epoch + 1, i + 1, running_loss/(i + 1), f1))
 

@@ -2,6 +2,7 @@ import os
 import json
 import torch
 import torch.nn as nn
+from seqeval.metrics import f1_score
 torch.manual_seed(1)
 
 from tagger.constant import START_TAG, STOP_TAG
@@ -27,6 +28,7 @@ class BiLSTM(nn.Module):
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
         self.tag_to_ix = tag_to_ix
+        self.ix_to_tag = {self.tag_to_ix[tag] : tag for tag in self.tag_to_ix}
         self.tagset_size = len(tag_to_ix)
         self.lstm_num_layers = lstm_num_layers
         self.batch_size = batch_size
@@ -75,6 +77,28 @@ class BiLSTM(nn.Module):
     def predict(self, sentences, lengths):
 
         return torch.argmax(self.forward(sentences, lengths), dim=2)
+
+    def f1_eval(self, dataloader):
+
+        all_tag_seqs = []
+        all_tag_seqs_pred = []
+        for batch in dataloader:
+          sentences, lengths, tag_seqs = batch
+          tag_seqs_pred= self.predict(sentences, lengths)
+          for i, tag_seq_pred in enumerate(tag_seqs_pred):
+            length = lengths[i]
+            temp_1 =  []
+            temp_2 = []
+            for j in range(length):
+              temp_1.append(self.ix_to_tag[tag_seqs[i][j].item()])
+              temp_2.append(self.ix_to_tag[tag_seq_pred[j].item()])
+
+            all_tag_seqs.append(temp_1)
+            all_tag_seqs_pred.append(temp_2)
+
+        f1 = f1_score(all_tag_seqs, all_tag_seqs_pred)
+          
+        return f1
 
     def save(self, output_dir):
 
