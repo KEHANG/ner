@@ -4,12 +4,12 @@ import torch
 from torch import optim
 from datetime import datetime
 
-import tagger.model
 import tagger.loader
+import tagger.models.bilstm
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--dset_dir', default='../data', type=str,
+parser.add_argument('--dset_dir', default='../../data', type=str,
                     help='dataset filename')
 parser.add_argument('--dset_file', default='mini_train.txt', type=str,
                     help='dataset filename for train')
@@ -21,13 +21,13 @@ parser.add_argument('--batch_size', default=1, type=int,
                     help='batch size')
 parser.add_argument('--num_workers', default=1, type=int,
                     help='_ num_workers')
-parser.add_argument('--epochs', default=1000, type=int,
+parser.add_argument('--epochs', default=1, type=int,
                     help='number of epochs')
 parser.add_argument('--lr', default=0.01, type=float,
                     help='learning rate')
 parser.add_argument('--weight_decay', default=1e-4, type=float,
                     help='weight decay rate')
-parser.add_argument('--print_period', default=2, type=float,
+parser.add_argument('--print_period', default=1, type=float,
                     help='print period')
 parser.add_argument('--embedding_dim', default=10, type=int,
                     help='embedding dimension of each word.')
@@ -53,7 +53,7 @@ def main(args):
     dataloader, dataloader_dev, word_to_ix, tag_to_ix = data
 
     # build model
-    net = tagger.model.BiLSTM(len(word_to_ix), 
+    net = tagger.models.bilstm.BiLSTM(len(word_to_ix), 
                                   tag_to_ix, 
                                   args.embedding_dim, 
                                   args.hidden_dim,
