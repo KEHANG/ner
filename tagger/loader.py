@@ -1,7 +1,8 @@
 import os
 import codecs
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, TensorDataset, DataLoader, RandomSampler, SequentialSampler
+
 from tagger.constant import START_TAG, STOP_TAG, PAD
 
 class PadSequence:
@@ -128,6 +129,50 @@ def return_data(dset_dir, dset_file, batch_size, num_workers,
                             collate_fn=PadSequence())
 
     return train_loader, dev_loader, word_to_ix, tag_to_ix
+
+def prepare_dataloader(dataset, tokenizer, tag_to_ix, batch_size, mode='train'):
+
+    input_ids_for_all_sentences = []
+    tag_ids_for_all_sentences = []
+    for sentence_idx, words_in_a_sentence in enumerate(dataset.word_sequences):
+        tags_for_a_sentence = dataset.tag_sequences[sentence_idx]
+        subwords_in_a_sentence = []
+        subtags_for_a_sentence = []
+        for word_idx, word in enumerate(words_in_a_sentence):
+            subwords_from_a_word = tokenizer.tokenize(word)
+            subwords_in_a_sentence.extend(subwords_from_a_word)
+            tag0 = tags_for_a_sentence[word_idx]
+            for m in range(len(subwords_from_a_word)):
+                if m == 0:
+                    subtags_for_a_sentence.append(tag0)
+                else:
+                    subtags_for_a_sentence.append("X")
+        
+        segment_ids = []
+        tag_ids = []
+        for subword_idx, token in enumerate(subwords_in_a_sentence):
+            segment_ids.append(0)
+            tag_ids.append(tag_to_ix[subtags_for_a_sentence[subword_idx]])
+        
+        input_ids = torch.tensor(tokenizer.convert_tokens_to_ids(subwords_in_a_sentence), dtype=torch.long)
+        
+        input_ids_for_all_sentences.append(input_ids)
+        tag_ids_for_all_sentences.append(torch.tensor(tag_ids, dtype=torch.long))
+
+    ## pad to the same length
+    padded_input_ids = torch.nn.utils.rnn.pad_sequence(input_ids_for_all_sentences, batch_first=True)
+    padded_tag_ids = torch.nn.utils.rnn.pad_sequence(tag_ids_for_all_sentences, batch_first=True)
+    ## get padding masks
+    attention_masks = torch.tensor([[float(i>0) for i in ii] for ii in padded_input_ids])
+
+    dataset = TensorDataset(padded_input_ids, attention_masks, padded_tag_ids)
+    if mode == 'train':
+        sampler = RandomSampler(dataset)
+    else:
+        sampler = SequentialSampler(dataset)
+    dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
+
+    return dataloader
 
 if __name__ == '__main__':
     dset_dir = '../data'
