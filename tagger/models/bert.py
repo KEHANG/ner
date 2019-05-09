@@ -1,6 +1,7 @@
 import os
 import json
 import torch
+from tqdm import tqdm
 import torch.nn.functional as F
 from seqeval.metrics import f1_score
 from pytorch_pretrained_bert import BertForTokenClassification
@@ -11,6 +12,31 @@ class BertNER(BertForTokenClassification):
         super(BertNER, self).__init__(config, len(tag_to_ix))
         self.tag_to_ix = tag_to_ix
         self.ix_to_tag = {self.tag_to_ix[tag] : tag for tag in self.tag_to_ix}
+
+    def train_one_epoch(self, train_dataloader, optimizer, device):
+
+      train_loss = 0.0
+      nb_tr_steps = 0
+      self.train()
+      for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
+
+          batch = tuple(t.to(device) for t in batch)
+          b_input_ids, b_input_mask, b_labels = batch
+          # forward pass
+          loss = self.forward(b_input_ids, token_type_ids=None,
+                              attention_mask=b_input_mask, labels=b_labels)
+          # backward pass
+          loss.backward()
+          # track train loss
+          train_loss += loss.item()
+          nb_tr_steps += 1
+          # gradient clipping
+          torch.nn.utils.clip_grad_norm_(parameters=self.parameters(), max_norm=1.0)
+          # update parameters
+          optimizer.step()
+          self.zero_grad()
+
+      return train_loss, nb_tr_steps
 
     def predict(self, input_ids, input_mask):
 
@@ -24,6 +50,7 @@ class BertNER(BertForTokenClassification):
 
         all_tag_seqs = []
         all_tag_seqs_pred = []
+        self.eval()
         for batch in dataloader:
             batch = tuple(t.to(device) for t in batch)
             input_ids, input_mask, label_ids = batch
