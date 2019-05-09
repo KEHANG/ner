@@ -89,32 +89,11 @@ def main(args):
     net.to(device)
     best_f1 = 0.0
     for epoch in trange(args.epochs, desc="Epoch"):
-        # TRAIN loop
-        net.train()
-        train_loss = 0.0
-        nb_tr_steps = 0
-        for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
-
-            batch = tuple(t.to(device) for t in batch)
-            b_input_ids, b_input_mask, b_labels = batch
-            # forward pass
-            loss = net(b_input_ids, token_type_ids=None,
-                         attention_mask=b_input_mask, labels=b_labels)
-            # backward pass
-            loss.backward()
-            # track train loss
-            train_loss += loss.item()
-            nb_tr_steps += 1
-            # gradient clipping
-            torch.nn.utils.clip_grad_norm_(parameters=net.parameters(), max_norm=1.0)
-            # update parameters
-            optimizer.step()
-            net.zero_grad()
-        # print train loss per epoch
+        # Train
+        train_loss, nb_tr_steps = net.train_one_epoch(train_dataloader, optimizer, device)
         print("Epoch={0} Train loss: {1}".format(epoch+1, train_loss/nb_tr_steps))
             
         # Eval loop
-        net.eval()
         f1 = net.f1_eval(dev_dataloader, device)
         print('Epoch={0} Validation F1: {1:.3f}'.format(epoch+1, f1))
 
