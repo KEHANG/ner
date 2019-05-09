@@ -32,27 +32,27 @@ args = parser.parse_args()
 
 def main(args):
 
-    # create work folder
+    # create workspace folder
     now = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
     work_folder = 'model-save-{0}'.format(now)
     os.mkdir(work_folder)
 
-    # load data
+    # load train and dev data
     train_dataset = tagger.loader.NERDataset(root=args.dset_dir, filename=args.dset_file, word_to_ix=None, tag_to_ix=None)
     dev_dataset = tagger.loader.NERDataset(root=args.dset_dir, filename=args.dset_file_dev, word_to_ix=None, tag_to_ix=None)
     tag_to_ix = {'[PAD]': 0,
-             'B-ORG': 1,
-             'O': 2,
-             'B-MISC': 3,
-             'B-PER': 4,
-             'I-PER': 5,
-             'B-LOC': 6,
-             'I-ORG': 7,
-             'I-MISC': 8,
-             'I-LOC': 9,
-             'X': 10}
+                 'B-ORG': 1,
+                 'O': 2,
+                 'B-MISC': 3,
+                 'B-PER': 4,
+                 'I-PER': 5,
+                 'B-LOC': 6,
+                 'I-ORG': 7,
+                 'I-MISC': 8,
+                 'I-LOC': 9,
+                 'X': 10}
 
-    # featurize data
+    # create training/validation-friendly dataloaders
     bert_model = 'bert-base-cased'
     do_lower_case = False
     tokenizer = BertTokenizer.from_pretrained(bert_model, do_lower_case=do_lower_case)
@@ -89,11 +89,11 @@ def main(args):
     net.to(device)
     best_f1 = 0.0
     for epoch in trange(args.epochs, desc="Epoch"):
-        # Train
+        # train step
         train_loss, nb_tr_steps = net.train_one_epoch(train_dataloader, optimizer, device)
         print("Epoch={0} Train loss: {1}".format(epoch+1, train_loss/nb_tr_steps))
             
-        # Eval loop
+        # evaluation step
         f1 = net.f1_eval(dev_dataloader, device)
         print('Epoch={0} Validation F1: {1:.3f}'.format(epoch+1, f1))
 
