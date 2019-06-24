@@ -34,7 +34,6 @@ class BiLSTM(nn.Module):
         self.batch_size = batch_size
 
         self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
-        self.hidden = self.init_hidden()
 
         self.lstm = nn.LSTM(embedding_dim, hidden_dim // 2,
                             num_layers=self.lstm_num_layers, bidirectional=True,
@@ -45,17 +44,12 @@ class BiLSTM(nn.Module):
 
         self.log_softmax = nn.LogSoftmax(dim=2)
 
-    def init_hidden(self):
-        return (torch.randn(self.lstm_num_layers*2, self.batch_size, self.hidden_dim // 2),
-                torch.randn(self.lstm_num_layers*2, self.batch_size, self.hidden_dim // 2))
-
     def _get_lstm_features(self, sentences, lengths):
-        self.hidden = self.init_hidden()
         embeds = self.word_embeds(sentences)
         embeds_packed = torch.nn.utils.rnn.pack_padded_sequence(embeds, 
                                                                 lengths, 
                                                                 batch_first=True)
-        lstm_out_packed, self.hidden = self.lstm(embeds_packed, self.hidden)
+        lstm_out_packed, self.hidden = self.lstm(embeds_packed)
         
         lstm_out, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out_packed, batch_first=True)
         lstm_feats = self.hidden2tag(lstm_out)
