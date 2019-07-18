@@ -93,7 +93,7 @@ class NerLSTM(nn.Module):
                 "batch_size": self.batch_size,
                 "vocab_size": self.vocab_size,
                 "tag_to_ix": self.tag_to_ix,
-                "model_type": 'LSTM'
+                "model_type": self.__class__.__name__
         }
 
         with open(os.path.join(output_dir, 'hyper_params.json'), 'w') as f_out:
