@@ -3,9 +3,12 @@ import json
 import torch
 import torch.nn as nn
 from seqeval.metrics import f1_score
-torch.manual_seed(1)
+from torch.nn.utils.rnn import (pack_padded_sequence, 
+                                pad_packed_sequence)
 
 from tagger.constant import START_TAG, STOP_TAG
+
+torch.manual_seed(1)
 
 def argmax(vec):
     # return the argmax as a python int
@@ -19,11 +22,13 @@ def log_sum_exp(vec):
     return max_score + \
         torch.log(torch.sum(torch.exp(vec - max_score_broadcast)))
 
-class BiLSTM(nn.Module):
+class NerBiLSTM(nn.Module):
 
-    def __init__(self, vocab_size, tag_to_ix, embedding_dim, hidden_dim,
+    def __init__(self, vocab_size, 
+                 tag_to_ix, 
+                 embedding_dim, hidden_dim,
                  lstm_num_layers=1, batch_size=2):
-        super(BiLSTM, self).__init__()
+        super(NerBiLSTM, self).__init__()
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
@@ -35,8 +40,10 @@ class BiLSTM(nn.Module):
 
         self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
 
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim // 2,
-                            num_layers=self.lstm_num_layers, bidirectional=True,
+        self.lstm = nn.LSTM(embedding_dim,
+                            hidden_dim // 2,
+                            num_layers=self.lstm_num_layers,
+                            bidirectional=True,
                             batch_first=True)
 
         # Maps the output of the LSTM into tag space.
@@ -44,41 +51,35 @@ class BiLSTM(nn.Module):
 
         self.log_softmax = nn.LogSoftmax(dim=2)
 
-    def _get_lstm_features(self, sentences, lengths):
+    def forward(self, sentences, lengths, tags_batch=None):
+
+        if self.training and tags_batch is None:
+            raise ValueError("In training mode, targets should be passed")
+        
         embeds = self.word_embeds(sentences)
-        embeds_packed = torch.nn.utils.rnn.pack_padded_sequence(embeds, 
-                                                                lengths, 
-                                                                batch_first=True)
-        lstm_out_packed, self.hidden = self.lstm(embeds_packed)
+        embeds_packed = pack_padded_sequence(embeds,
+                                             lengths,
+                                             batch_first=True)
+        packed_activations, _ = self.lstm(embeds_packed)
+        activations, _ = pad_packed_sequence(packed_activations, 
+                                             batch_first=True)
+        outputs = self.hidden2tag(activations)
+        outputs = self.log_softmax(outputs)
         
-        lstm_out, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out_packed, batch_first=True)
-        lstm_feats = self.hidden2tag(lstm_out)
-        return lstm_feats
+        if self.training:
+            loss = nn.NLLLoss()
+            return loss(outputs.permute(0, 2, 1), tags_batch)
 
-    def forward(self, sentences, lengths):
-        # Get the emission scores from the BiLSTM
-        lstm_feats_batch = self._get_lstm_features(sentences, lengths)
-
-        return self.log_softmax(lstm_feats_batch)
-
-    def neg_log_likelihood(self, sentences, lengths, tags_batch):
-        
-        output = self.forward(sentences, lengths).permute(0, 2, 1)
-        loss_func = nn.NLLLoss()
-
-        return loss_func(output, tags_batch)
-
-    def predict(self, sentences, lengths):
-
-        return torch.argmax(self.forward(sentences, lengths), dim=2)
+        return torch.argmax(outputs, dim=2)
 
     def f1_eval(self, dataloader):
 
+        self.eval()
         all_tag_seqs = []
         all_tag_seqs_pred = []
         for batch in dataloader:
           sentences, lengths, tag_seqs = batch
-          tag_seqs_pred= self.predict(sentences, lengths)
+          tag_seqs_pred= self.forward(sentences, lengths)
           for i, tag_seq_pred in enumerate(tag_seqs_pred):
             length = lengths[i]
             temp_1 =  []
@@ -91,7 +92,6 @@ class BiLSTM(nn.Module):
             all_tag_seqs_pred.append(temp_2)
 
         f1 = f1_score(all_tag_seqs, all_tag_seqs_pred)
-          
         return f1
 
     def save(self, output_dir):
@@ -110,7 +110,7 @@ class BiLSTM(nn.Module):
                 "batch_size": self.batch_size,
                 "vocab_size": self.vocab_size,
                 "tag_to_ix": self.tag_to_ix,
-                "model_type": 'BiLSTM'
+                "model_type": self.__class__.__name__
         }
 
         with open(os.path.join(output_dir, 'hyper_params.json'), 'w') as f_out:
