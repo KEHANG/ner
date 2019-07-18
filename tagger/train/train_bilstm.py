@@ -21,18 +21,18 @@ parser.add_argument('--batch_size', default=1, type=int,
                     help='batch size')
 parser.add_argument('--num_workers', default=1, type=int,
                     help='_ num_workers')
-parser.add_argument('--epochs', default=1, type=int,
+parser.add_argument('--epochs', default=200, type=int,
                     help='number of epochs')
 parser.add_argument('--lr', default=0.01, type=float,
                     help='learning rate')
 parser.add_argument('--weight_decay', default=1e-4, type=float,
                     help='weight decay rate')
-parser.add_argument('--print_period', default=1, type=float,
+parser.add_argument('--print_period', default=3600, type=float,
                     help='print period')
 parser.add_argument('--embedding_dim', default=10, type=int,
                     help='embedding dimension of each word.')
 parser.add_argument('--hidden_dim', default=8, type=int,
-                    help='hiddlen dimension of BiLSTM.')
+                    help='hiddlen dimension.')
 
 args = parser.parse_args()
 
@@ -53,11 +53,11 @@ def main(args):
     dataloader, dataloader_dev, word_to_ix, tag_to_ix = data
 
     # build model
-    net = tagger.models.bilstm.BiLSTM(len(word_to_ix), 
-                                  tag_to_ix, 
-                                  args.embedding_dim, 
-                                  args.hidden_dim,
-                                  batch_size=args.batch_size)
+    net = tagger.models.bilstm.NerBiLSTM(len(word_to_ix), 
+                                         tag_to_ix, 
+                                         args.embedding_dim, 
+                                         args.hidden_dim,
+                                         batch_size=args.batch_size)
     
     optimizer = optim.SGD(net.parameters(), 
                           lr=args.lr, 
@@ -67,16 +67,16 @@ def main(args):
     best_f1 = 0.0
     for epoch in range(args.epochs):
         # TRAIN loop
-        net.train()
         running_loss = 0.0
         for i, batch in enumerate(dataloader):
             # Step 1. Remember that Pytorch accumulates gradients.
             # We need to clear them out before each instance
+            net.train()
             net.zero_grad()
 
             # Step 2. Run our forward pass.
             sentences, lengths, tag_seqs = batch
-            loss = torch.mean(net.neg_log_likelihood(sentences, lengths, tag_seqs))
+            loss = torch.mean(net.forward(sentences, lengths, tag_seqs))
 
             # Step 3. Compute the loss, gradients, and update the parameters by
             # calling optimizer.step()
