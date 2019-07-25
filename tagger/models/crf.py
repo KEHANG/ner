@@ -207,7 +207,7 @@ class BiLSTM_CRF(nn.Module):
                                                 tag_sequence[:(sequence_length + 2)], 
                                                 self.transitions
                                             )
-                best_paths.append(torch.tensor(viterbi_path))
+                best_paths.append(torch.tensor(viterbi_path[1:sequence_length+1]))
             return best_paths
 
     def f1_eval(self, dataloader):
