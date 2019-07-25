@@ -44,8 +44,8 @@ class BiLSTM_CRF(nn.Module):
 
         # These two statements enforce the constraint that we never transfer
         # to the start tag and we never transfer from the stop tag
-        self.transitions.data[tag_to_ix[START_TAG], :] = -10000
-        self.transitions.data[:, tag_to_ix[STOP_TAG]] = -10000
+        self.transitions.data[:, tag_to_ix[START_TAG]] = -10000
+        self.transitions.data[tag_to_ix[STOP_TAG], :] = -10000
 
     def rnn_forward(self, sentences, lengths):
         embeds = self.word_embeds(sentences)
