@@ -68,10 +68,12 @@ def main(args):
     hidden_dim = args.hidden_dim
     lstm_num_layers = 1
     tagset_size = len(tag_to_ix)
+    bidirectional = False
     net = tagger.models.lstm.NerLSTM(vocab_size,
                                      embedding_dim,
                                      hidden_dim,
                                      lstm_num_layers,
+                                     bidirectional,
                                      tagset_size)
     
     optimizer = optim.SGD(net.parameters(), 

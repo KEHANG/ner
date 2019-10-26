@@ -1,6 +1,6 @@
-import torch
 import os
 import json
+import torch
 import torch.nn as nn
 
 from tagger.models.base import NerBaseModel, NerHeads
@@ -14,6 +14,7 @@ class NerLSTM(NerBaseModel):
                  # for encoder
                  hidden_dim,
                  lstm_num_layers,
+                 bidirectional,
                  # for ner_heads
                  tagset_size):
         
@@ -21,13 +22,19 @@ class NerLSTM(NerBaseModel):
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
         self.lstm_num_layers = lstm_num_layers
+        self.bidirectional = bidirectional
         self.tagset_size = tagset_size
 
         embedding_module = nn.Embedding(vocab_size, embedding_dim)
 
+        if bidirectional:
+            single_lstm_hidden_dim = hidden_dim // 2
+        else:
+            single_lstm_hidden_dim = hidden_dim
         encoder = nn.LSTM(embedding_dim,
-                          hidden_dim,
+                          single_lstm_hidden_dim,
                           num_layers=self.lstm_num_layers,
+                          bidirectional=bidirectional,
                           batch_first=True)
 
         ner_heads = NerHeads(hidden_dim, self.tagset_size)

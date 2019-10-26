@@ -1,11 +1,12 @@
 import os
+import json
 import argparse
 import torch
 from torch import optim
 from datetime import datetime
 
 import tagger.loader
-import tagger.models.bilstm
+import tagger.models.lstm
 
 parser = argparse.ArgumentParser()
 
@@ -51,13 +52,29 @@ def main(args):
                                      args.dset_file_dev,
                                      args.dset_file_test)
     dataloader, dataloader_dev, word_to_ix, tag_to_ix = data
+    ix_to_tag = {tag_to_ix[tag] : tag for tag in tag_to_ix}
+    train_params = {
+          "batch_size": args.batch_size,
+          "learning_rate": args.lr,
+          "weight_decay": args.weight_decay,
+          "tag_to_ix": tag_to_ix
+    }
+    with open(os.path.join(work_folder, 'train_params.json'), 'w') as f_out:
+      json.dump(train_params, f_out, indent=3)
 
     # build model
-    net = tagger.models.bilstm.NerBiLSTM(len(word_to_ix), 
-                                         tag_to_ix, 
-                                         args.embedding_dim, 
-                                         args.hidden_dim,
-                                         batch_size=args.batch_size)
+    vocab_size = len(word_to_ix)
+    embedding_dim = args.embedding_dim
+    hidden_dim = args.hidden_dim
+    lstm_num_layers = 1
+    tagset_size = len(tag_to_ix)
+    bidirectional = True
+    net = tagger.models.lstm.NerLSTM(vocab_size,
+                                     embedding_dim,
+                                     hidden_dim,
+                                     lstm_num_layers,
+                                     bidirectional,
+                                     tagset_size)
     
     optimizer = optim.SGD(net.parameters(), 
                           lr=args.lr, 
@@ -88,7 +105,7 @@ def main(args):
             if i % args.print_period == (args.print_period-1):
                 # Eval loop
                 net.eval()
-                f1 = net.f1_eval(dataloader_dev)
+                f1 = net.f1_eval(dataloader_dev, ix_to_tag)
                 print('[epoch=%d, batches=%d] train-loss: %.3f dev-f1: %.3f' %
                       (epoch + 1, i + 1, running_loss/(i + 1), f1))
 
