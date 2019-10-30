@@ -1,0 +1,9 @@
+{
+   "vocab_size": 30290,
+   "embedding_dim": 10,
+   "hidden_dim": 8,
+   "lstm_num_layers": 1,
+   "tagset_size": 12,
+   "bidirectional": false,
+   "model_type": "NerLSTM"
+}
