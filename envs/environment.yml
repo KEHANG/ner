@@ -2,10 +2,13 @@ name: ner
 channels:
   - defaults
   - conda-forge
+  - kehang
+  - pytorch
 dependencies:
   - python=3
   - pytorch
   - tqdm
+  - m2s
   - pip:
       - seqeval
       - pytorch_pretrained_bert
