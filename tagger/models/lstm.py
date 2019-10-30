@@ -43,6 +43,24 @@ class NerLSTM(NerBaseModel):
                                       encoder,
                                       ner_heads)
 
+    @classmethod
+    def load(cls, model_path):
+        with open(os.path.join(model_path, 'model_params.json'), 'r') as f:
+            model_params = json.load(f)
+
+        model = cls(vocab_size=model_params['vocab_size'],
+                    embedding_dim=model_params['embedding_dim'],
+                    hidden_dim=model_params['hidden_dim'],
+                    lstm_num_layers=model_params['lstm_num_layers'],
+                    bidirectional=model_params['bidirectional'],
+                    tagset_size=model_params['tagset_size'])
+
+        model.load_state_dict(torch.load(os.path.join(model_path, 'model.pt'),
+                                       map_location='cpu'))
+        model.eval()
+
+        return model
+
     def save(self, output_dir):
 
         # save model weights

@@ -37,6 +37,11 @@ class NerBaseModel(nn.Module):
 
         return torch.argmax(outputs, dim=2)
 
+    def forward_on_instance(self, instance):
+        """This method is mainly used by model2service."""
+        sentence, length = instance
+        return self.forward(sentence, length)
+
     def f1_eval(self, dataloader, ix_to_tag):
 
         self.eval()
