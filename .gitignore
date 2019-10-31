@@ -4,5 +4,6 @@
 
 external/*
 ipython/*
+site/*
 tagger/train/model-save*
 testing/*
