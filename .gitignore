@@ -1,5 +1,8 @@
 
 *.pyc
+.coverage
 
+external/*
 ipython/*
 tagger/train/model-save*
+testing/*
