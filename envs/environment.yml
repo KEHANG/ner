@@ -9,6 +9,8 @@ dependencies:
   - pytorch
   - tqdm
   - m2s
+  - nose
+  - coverage
   - pip:
       - seqeval
       - pytorch_pretrained_bert
