@@ -1,0 +1,28 @@
+dist: xenial
+language: python
+sudo: false
+python:
+  - "3.7"
+
+before_install:
+  # Set up anaconda
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - chmod +x miniconda.sh
+  - ./miniconda.sh -b -p $HOME/miniconda
+  - export PATH=$HOME/miniconda/bin:$PATH
+  - export PYTHONPATH=$TRAVIS_BUILD_DIR:$PYTHONPATH
+  # Update conda itself
+  - conda update --yes conda
+  - cd $TRAVIS_BUILD_DIR
+
+install:
+  - conda env create -f envs/environment.yaml
+  - source activate ner
+  - conda list
+  - pip install codecov
+
+script:
+  - make unittests
+
+after_success:
+  - codecov
