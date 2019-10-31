@@ -16,7 +16,7 @@ before_install:
   - cd $TRAVIS_BUILD_DIR
 
 install:
-  - conda env create -f envs/environment.yaml
+  - conda env create -f envs/environment.yml
   - source activate ner
   - conda list
   - pip install codecov
