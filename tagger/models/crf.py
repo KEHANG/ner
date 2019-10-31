@@ -3,7 +3,7 @@ import json
 import torch
 import torch.nn as nn
 from seqeval.metrics import f1_score
-from torch.nn.utils.rnn import (pack_padded_sequence, 
+from torch.nn.utils.rnn import (pack_padded_sequence,
                                 pad_packed_sequence)
 
 import tagger.models.util as util
@@ -13,8 +13,8 @@ torch.manual_seed(1)
 
 class BiLSTM_CRF(nn.Module):
 
-    def __init__(self, vocab_size, 
-                 tag_to_ix, 
+    def __init__(self, vocab_size,
+                 tag_to_ix,
                  embedding_dim, hidden_dim,
                  lstm_num_layers=1, batch_size=2):
         super(BiLSTM_CRF, self).__init__()
@@ -203,8 +203,8 @@ class BiLSTM_CRF(nn.Module):
                 # And at the last timestep we must have the END_TAG
                 tag_sequence[sequence_length + 1, end_tag] = 0.
 
-                viterbi_path, viterbi_score = util.viterbi_decode(
-                                                tag_sequence[:(sequence_length + 2)], 
+                viterbi_path, _ = util.viterbi_decode(
+                                                tag_sequence[:(sequence_length + 2)],
                                                 self.transitions
                                             )
                 best_paths.append(torch.tensor(viterbi_path[1:sequence_length+1]))

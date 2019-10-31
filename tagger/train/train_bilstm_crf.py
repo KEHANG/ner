@@ -44,9 +44,9 @@ def main(args):
     os.mkdir(work_folder)
 
     # load data
-    data = tagger.loader.return_data(args.dset_dir, 
-                                     args.dset_file, 
-                                     args.batch_size, 
+    data = tagger.loader.return_data(args.dset_dir,
+                                     args.dset_file,
+                                     args.batch_size,
                                      args.num_workers,
                                      args.dset_file_dev,
                                      args.dset_file_test)
@@ -59,10 +59,10 @@ def main(args):
                                      args.hidden_dim,
                                      batch_size=args.batch_size)
     
-    optimizer = optim.SGD(net.parameters(), 
+    optimizer = optim.SGD(net.parameters(),
                           lr=args.lr, 
                           weight_decay=args.weight_decay)
-    
+
     # start training
     best_f1 = 0.0
     for epoch in range(args.epochs):
@@ -81,7 +81,7 @@ def main(args):
             # Step 3. Compute the loss, gradients, and update the parameters by
             # calling optimizer.step()
             loss.backward()
-            optimizer.step()   
+            optimizer.step()
 
             # Print statistics
             running_loss += loss.item()

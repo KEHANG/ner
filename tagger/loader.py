@@ -22,7 +22,7 @@ class PadSequence:
         return sequences_padded, lengths, labels_padded
 
 class NERDataset(Dataset):
-    def __init__(self, root, filename, 
+    def __init__(self, root, filename,
                  word_to_ix, tag_to_ix,
                  tag_column_idx=-1):
 
@@ -82,8 +82,8 @@ def get_word_and_tag_to_ix(dset_dir, dset_file, dset_file_dev, dset_file_test, t
         with codecs.open(datafile, 'r', 'utf-8') as f:
             lines = f.readlines()
         
-        for k in range(len(lines)):
-            line = lines[k].strip()
+        for line_raw in lines:
+            line = line_raw.strip()
 
             # new sentence or new document
             if len(line) == 0 or line.startswith('-DOCSTART-'):
@@ -105,12 +105,12 @@ def return_data(dset_dir, dset_file, batch_size, num_workers,
 
     
     word_to_ix, tag_to_ix = get_word_and_tag_to_ix(dset_dir, dset_file, 
-                                                   dset_file_dev, dset_file_test, 
+                                                   dset_file_dev, dset_file_test,
                                                    tag_column_idx=-1)
     train_data = NERDataset(root=dset_dir, filename=dset_file, 
                             word_to_ix=word_to_ix, tag_to_ix=tag_to_ix)
 
-    dev_data = NERDataset(root=dset_dir, filename=dset_file_dev, 
+    dev_data = NERDataset(root=dset_dir, filename=dset_file_dev,
                           word_to_ix=word_to_ix, tag_to_ix=tag_to_ix)
     
     train_loader = DataLoader(train_data,
@@ -150,12 +150,12 @@ def prepare_dataloader(dataset, tokenizer, tag_to_ix, batch_size, mode='train'):
         
         segment_ids = []
         tag_ids = []
-        for subword_idx, token in enumerate(subwords_in_a_sentence):
+        for subword_idx, _ in enumerate(subwords_in_a_sentence):
             segment_ids.append(0)
             tag_ids.append(tag_to_ix[subtags_for_a_sentence[subword_idx]])
         
         input_ids = torch.tensor(tokenizer.convert_tokens_to_ids(subwords_in_a_sentence), dtype=torch.long)
-        
+
         input_ids_for_all_sentences.append(input_ids)
         tag_ids_for_all_sentences.append(torch.tensor(tag_ids, dtype=torch.long))
 

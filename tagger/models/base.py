@@ -1,9 +1,8 @@
-import torch
 import os
-import json
+import torch
 import torch.nn as nn
 from seqeval.metrics import f1_score
-from torch.nn.utils.rnn import (pack_padded_sequence, 
+from torch.nn.utils.rnn import (pack_padded_sequence,
                                 pad_packed_sequence)
 
 class NerBaseModel(nn.Module):
@@ -27,7 +26,7 @@ class NerBaseModel(nn.Module):
                                              lengths,
                                              batch_first=True)
         packed_activations, _ = self.encoder(embeds_packed)
-        activations, _ = pad_packed_sequence(packed_activations, 
+        activations, _ = pad_packed_sequence(packed_activations,
                                              batch_first=True)
         outputs = self.ner_heads(activations)
         
@@ -83,6 +82,6 @@ class NerHeads(nn.Module):
         self.log_softmax = nn.LogSoftmax(dim=2)
 
     def forward(self, activations):
-        
+
         outputs = self.hidden2tag(activations)
         return self.log_softmax(outputs)

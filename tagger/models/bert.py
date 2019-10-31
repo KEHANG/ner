@@ -18,7 +18,7 @@ class BertNER(BertForTokenClassification):
       train_loss = 0.0
       nb_tr_steps = 0
       self.train()
-      for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
+      for _, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
 
           batch = tuple(t.to(device) for t in batch)
           b_input_ids, b_input_mask, b_labels = batch

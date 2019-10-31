@@ -3,7 +3,7 @@ import argparse
 import torch
 from torch import optim
 from datetime import datetime
-from tqdm import tqdm, trange
+from tqdm import trange
 from pytorch_pretrained_bert import BertTokenizer
 
 import tagger.loader
@@ -57,7 +57,7 @@ def main(args):
     do_lower_case = False
     tokenizer = BertTokenizer.from_pretrained(bert_model, do_lower_case=do_lower_case)
     
-    train_dataloader = tagger.loader.prepare_dataloader(train_dataset, 
+    train_dataloader = tagger.loader.prepare_dataloader(train_dataset,
                                                         tokenizer,
                                                         tag_to_ix, 
                                                         args.batch_size, 
@@ -65,8 +65,8 @@ def main(args):
 
     dev_dataloader = tagger.loader.prepare_dataloader(dev_dataset, 
                                                       tokenizer,
-                                                      tag_to_ix, 
-                                                      args.batch_size, 
+                                                      tag_to_ix,
+                                                      args.batch_size,
                                                       mode='dev')
 
     # build model
