@@ -79,7 +79,7 @@ def main(args):
     optimizer = optim.SGD(net.parameters(),
                           lr=args.lr,
                           weight_decay=args.weight_decay)
-    
+
     # start training
     best_f1 = 0.0
     for epoch in range(args.epochs):

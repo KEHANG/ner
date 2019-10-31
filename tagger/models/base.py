@@ -77,7 +77,7 @@ class NerHeads(nn.Module):
                  hidden_dim,
                  tagset_size):
         super(NerHeads, self).__init__()
-        
+
         self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
         self.log_softmax = nn.LogSoftmax(dim=2)
 

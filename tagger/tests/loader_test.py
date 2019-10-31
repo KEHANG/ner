@@ -14,7 +14,7 @@ class TestLoader(unittest.TestCase):
 
     def test_get_word_and_tag_to_ix(self):
 
-    	word_to_ix, tag_to_ix = tagger.loader.get_word_and_tag_to_ix(self.dset_dir, 
+    	word_to_ix, tag_to_ix = tagger.loader.get_word_and_tag_to_ix(self.dset_dir,
     						self.dset_file, self.dset_file_dev, self.dset_file_test)
 
     	self.assertEqual(len(word_to_ix), 14987)

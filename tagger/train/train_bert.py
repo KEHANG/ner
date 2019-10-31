@@ -59,11 +59,11 @@ def main(args):
     
     train_dataloader = tagger.loader.prepare_dataloader(train_dataset,
                                                         tokenizer,
-                                                        tag_to_ix, 
-                                                        args.batch_size, 
+                                                        tag_to_ix,
+                                                        args.batch_size,
                                                         mode='train')
 
-    dev_dataloader = tagger.loader.prepare_dataloader(dev_dataset, 
+    dev_dataloader = tagger.loader.prepare_dataloader(dev_dataset,
                                                       tokenizer,
                                                       tag_to_ix,
                                                       args.batch_size,
@@ -92,7 +92,7 @@ def main(args):
         # train step
         train_loss, nb_tr_steps = net.train_one_epoch(train_dataloader, optimizer, device)
         print("Epoch={0} Train loss: {1}".format(epoch+1, train_loss/nb_tr_steps))
-            
+
         # evaluation step
         f1 = net.f1_eval(dev_dataloader, device)
         print('Epoch={0} Validation F1: {1:.3f}'.format(epoch+1, f1))

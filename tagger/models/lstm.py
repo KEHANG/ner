@@ -17,7 +17,7 @@ class NerLSTM(NerBaseModel):
                  bidirectional,
                  # for ner_heads
                  tagset_size):
-        
+
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim

@@ -70,7 +70,7 @@ class BertNER(BertForTokenClassification):
             all_tag_seqs_pred.append(temp_2)
 
         f1 = f1_score(all_tag_seqs, all_tag_seqs_pred)
-          
+
         return f1
 
     def save(self, output_dir):

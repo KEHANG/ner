@@ -53,14 +53,14 @@ def main(args):
     dataloader, dataloader_dev, word_to_ix, tag_to_ix = data
 
     # build model
-    net = tagger.models.crf.BiLSTM_CRF(len(word_to_ix), 
-                                     tag_to_ix, 
+    net = tagger.models.crf.BiLSTM_CRF(len(word_to_ix),
+                                     tag_to_ix,
                                      args.embedding_dim,
                                      args.hidden_dim,
                                      batch_size=args.batch_size)
-    
+
     optimizer = optim.SGD(net.parameters(),
-                          lr=args.lr, 
+                          lr=args.lr,
                           weight_decay=args.weight_decay)
 
     # start training

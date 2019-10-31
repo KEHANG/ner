@@ -37,8 +37,8 @@ class NERDataset(Dataset):
         
         curr_words = list()
         curr_tags = list()
-        for k in range(len(lines)):
-            line = lines[k].strip()
+        for k, line_raw in enumerate(lines):
+            line = line_raw.strip()
 
             # new sentence or new document
             if len(line) == 0 or line.startswith('-DOCSTART-'):
@@ -104,10 +104,10 @@ def return_data(dset_dir, dset_file, batch_size, num_workers,
                 dset_file_dev, dset_file_test):
 
     
-    word_to_ix, tag_to_ix = get_word_and_tag_to_ix(dset_dir, dset_file, 
+    word_to_ix, tag_to_ix = get_word_and_tag_to_ix(dset_dir, dset_file,
                                                    dset_file_dev, dset_file_test,
                                                    tag_column_idx=-1)
-    train_data = NERDataset(root=dset_dir, filename=dset_file, 
+    train_data = NERDataset(root=dset_dir, filename=dset_file,
                             word_to_ix=word_to_ix, tag_to_ix=tag_to_ix)
 
     dev_data = NERDataset(root=dset_dir, filename=dset_file_dev,
@@ -153,7 +153,7 @@ def prepare_dataloader(dataset, tokenizer, tag_to_ix, batch_size, mode='train'):
         for subword_idx, _ in enumerate(subwords_in_a_sentence):
             segment_ids.append(0)
             tag_ids.append(tag_to_ix[subtags_for_a_sentence[subword_idx]])
-        
+
         input_ids = torch.tensor(tokenizer.convert_tokens_to_ids(subwords_in_a_sentence), dtype=torch.long)
 
         input_ids_for_all_sentences.append(input_ids)

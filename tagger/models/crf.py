@@ -53,7 +53,7 @@ class BiLSTM_CRF(nn.Module):
                                              lengths,
                                              batch_first=True)
         packed_activations, _ = self.lstm(embeds_packed)
-        activations, _ = pad_packed_sequence(packed_activations, 
+        activations, _ = pad_packed_sequence(packed_activations,
                                              batch_first=True)
         outputs = self.hidden2tag(activations)
         return outputs
@@ -177,7 +177,7 @@ class BiLSTM_CRF(nn.Module):
     def forward(self, sentences, lengths, tags=None):
         # run throught rnn layer of the model
         rnn_outputs = self.rnn_forward(sentences, lengths)
-        
+
         if self.training:
             log_denominator = self._log_likelihood_denominator(rnn_outputs, lengths)
             log_numerator = self._log_likelihood_numerator(rnn_outputs, lengths, tags)
