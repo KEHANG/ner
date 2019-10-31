@@ -75,7 +75,7 @@ def main(args):
                                      lstm_num_layers,
                                      bidirectional,
                                      tagset_size)
-    
+
     optimizer = optim.SGD(net.parameters(),
                           lr=args.lr,
                           weight_decay=args.weight_decay)

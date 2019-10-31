@@ -147,7 +147,7 @@ def prepare_dataloader(dataset, tokenizer, tag_to_ix, batch_size, mode='train'):
                     subtags_for_a_sentence.append(tag0)
                 else:
                     subtags_for_a_sentence.append("X")
-        
+
         segment_ids = []
         tag_ids = []
         for subword_idx, _ in enumerate(subwords_in_a_sentence):

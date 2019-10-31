@@ -29,7 +29,7 @@ class NerBaseModel(nn.Module):
         activations, _ = pad_packed_sequence(packed_activations,
                                              batch_first=True)
         outputs = self.ner_heads(activations)
-        
+
         if self.training:
             loss = nn.NLLLoss()
             return loss(outputs.permute(0, 2, 1), tags_batch)

@@ -82,7 +82,7 @@ def main(args):
          'weight_decay_rate': 0.0}
     ]
     optimizer = optim.Adam(optimizer_grouped_parameters, lr=args.lr)
-    
+
     # start training
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("using {0}.".format(device))
