@@ -28,8 +28,6 @@ parser.add_argument('--lr', default=0.01, type=float,
                     help='learning rate')
 parser.add_argument('--weight_decay', default=1e-4, type=float,
                     help='weight decay rate')
-parser.add_argument('--print_period', default=3600, type=float,
-                    help='print period')
 parser.add_argument('--embedding_dim', default=10, type=int,
                     help='embedding dimension of each word.')
 parser.add_argument('--hidden_dim', default=8, type=int,
@@ -83,36 +81,18 @@ def main(args):
     # start training
     best_f1 = 0.0
     for epoch in range(args.epochs):
-        # TRAIN loop
-        running_loss = 0.0
-        for i, batch in enumerate(dataloader):
-            # Step 1. Remember that Pytorch accumulates gradients.
-            # We need to clear them out before each instance
-            net.train()
-            net.zero_grad()
+        # train step
+        train_loss, nb_tr_steps = net.train_one_epoch(dataloader, optimizer)
+        print("Epoch={0} Train loss: {1}".format(epoch+1, train_loss/nb_tr_steps))
 
-            # Step 2. Run our forward pass.
-            sentences, lengths, tag_seqs = batch
-            loss = torch.mean(net.forward(sentences, lengths, tag_seqs))
+        # evaluation step
+        f1 = net.f1_eval(dataloader_dev, ix_to_tag)
+        print('Epoch={0} Validation F1: {1:.3f}'.format(epoch+1, f1))
 
-            # Step 3. Compute the loss, gradients, and update the parameters by
-            # calling optimizer.step()
-            loss.backward()
-            optimizer.step()
-
-            # Print statistics
-            running_loss += loss.item()
-            if i % args.print_period == (args.print_period-1):
-                # Eval loop
-                net.eval()
-                f1 = net.f1_eval(dataloader_dev, ix_to_tag)
-                print('[epoch=%d, batches=%d] train-loss: %.3f dev-f1: %.3f' %
-                      (epoch + 1, i + 1, running_loss/(i + 1), f1))
-
-                if f1 > best_f1:
-                  best_f1 = f1
-                  output_dir = os.path.join(work_folder, "epoch-{0:05d}-batch-{1:06d}".format(epoch+1, i+1))
-                  net.save(output_dir)
+        if f1 > best_f1:
+          best_f1 = f1
+          output_dir = os.path.join(work_folder, "epoch-{0:05d}".format(epoch+1))
+          net.save(output_dir)
 
 if __name__ == '__main__':
     main(args)
