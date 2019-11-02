@@ -1,5 +1,6 @@
 import os
 import torch
+from tqdm import tqdm
 import torch.nn as nn
 from seqeval.metrics import f1_score
 from torch.nn.utils.rnn import (pack_padded_sequence,
@@ -40,6 +41,30 @@ class NerBaseModel(nn.Module):
         """This method is mainly used by model2service."""
         sentence, length = instance
         return self.forward(sentence, length)
+
+    def train_one_epoch(self, train_dataloader, optimizer):
+
+        train_loss = 0.0
+        nb_tr_steps = 0
+        self.train()
+        for _, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
+
+            self.zero_grad()
+            sentences, lengths, tag_seqs = batch
+            # forward pass
+            loss = torch.mean(self.forward(sentences, lengths, tag_seqs))
+
+            # backward pass
+            loss.backward()
+            # track train loss
+            train_loss += loss.item()
+            nb_tr_steps += 1
+            # gradient clipping
+            torch.nn.utils.clip_grad_norm_(parameters=self.parameters(), max_norm=1.0)
+            # update parameters
+            optimizer.step()
+
+        return train_loss, nb_tr_steps
 
     def f1_eval(self, dataloader, ix_to_tag):
 

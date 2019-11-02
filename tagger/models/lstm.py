@@ -1,7 +1,6 @@
 import os
 import json
 import torch
-from tqdm import tqdm
 import torch.nn as nn
 
 from tagger.models.base import NerBaseModel, NerHeads
@@ -61,30 +60,6 @@ class NerLSTM(NerBaseModel):
         model.eval()
 
         return model
-
-    def train_one_epoch(self, train_dataloader, optimizer):
-
-        train_loss = 0.0
-        nb_tr_steps = 0
-        self.train()
-        for _, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
-
-            self.zero_grad()
-            sentences, lengths, tag_seqs = batch
-            # forward pass
-            loss = torch.mean(self.forward(sentences, lengths, tag_seqs))
-
-            # backward pass
-            loss.backward()
-            # track train loss
-            train_loss += loss.item()
-            nb_tr_steps += 1
-            # gradient clipping
-            torch.nn.utils.clip_grad_norm_(parameters=self.parameters(), max_norm=1.0)
-            # update parameters
-            optimizer.step()
-
-        return train_loss, nb_tr_steps
 
     def save(self, output_dir):
 
