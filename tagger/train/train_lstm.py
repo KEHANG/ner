@@ -1,7 +1,6 @@
 import os
 import json
 import argparse
-import torch
 from torch import optim
 from datetime import datetime
 
