@@ -21,7 +21,7 @@ class TestLSTM(unittest.TestCase):
         # fresh model is used to test
         # training related functions/methods
         cls.fresh_model = tagger.models.lstm.NerLSTM(
-                    vocab_size=14987, embedding_dim=10, 
+                    vocab_size=14987, embedding_dim=10,
                     hidden_dim=8, lstm_num_layers=1,
                     bidirectional=False, tagset_size=12)
 
