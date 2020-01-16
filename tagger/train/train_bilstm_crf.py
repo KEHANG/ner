@@ -71,7 +71,7 @@ def main(args):
         print("Epoch={0} Train loss: {1}".format(epoch+1, train_loss/nb_tr_steps))
 
         # evaluation step
-        f1 = net.f1_eval(dataloader_dev, ix_to_tag)
+        f1 = net.f1_eval(dataloader_dev)
         print('Epoch={0} Validation F1: {1:.3f}'.format(epoch+1, f1))
 
         if f1 > best_f1:
