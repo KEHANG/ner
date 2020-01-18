@@ -52,10 +52,11 @@ def main(args):
     dataloader, dataloader_dev, word_to_ix, tag_to_ix = data
 
     # build model
-    net = tagger.models.crf.BiLSTM_CRF(len(word_to_ix),
-                                     tag_to_ix,
-                                     args.embedding_dim,
-                                     args.hidden_dim)
+    net = tagger.models.crf.BiLSTM_CRF(vocab_size=len(word_to_ix),
+                                       embedding_dim=args.embedding_dim,
+                                       hidden_dim=args.hidden_dim,
+                                       lstm_num_layers=1,
+                                       tag_to_ix=tag_to_ix)
 
     optimizer = optim.SGD(net.parameters(),
                           lr=args.lr,
