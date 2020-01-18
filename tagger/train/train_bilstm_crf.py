@@ -55,8 +55,7 @@ def main(args):
     net = tagger.models.crf.BiLSTM_CRF(len(word_to_ix),
                                      tag_to_ix,
                                      args.embedding_dim,
-                                     args.hidden_dim,
-                                     batch_size=args.batch_size)
+                                     args.hidden_dim)
 
     optimizer = optim.SGD(net.parameters(),
                           lr=args.lr,
