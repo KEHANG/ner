@@ -220,28 +220,6 @@ class BiLSTM_CRF(NerBaseModel):
                 best_paths.append(torch.tensor(viterbi_path[1:sequence_length+1]))
             return torch.stack(best_paths)
 
-    def f1_eval(self, dataloader):
-
-        self.eval()
-        all_tag_seqs = []
-        all_tag_seqs_pred = []
-        for batch in dataloader:
-          sentences, lengths, tag_seqs = batch
-          tag_seqs_pred= self.forward(sentences, lengths)
-          for i, tag_seq_pred in enumerate(tag_seqs_pred):
-            length = lengths[i]
-            temp_1 =  []
-            temp_2 = []
-            for j in range(length):
-              temp_1.append(self.ix_to_tag[tag_seqs[i][j].item()])
-              temp_2.append(self.ix_to_tag[tag_seq_pred[j].item()])
-
-            all_tag_seqs.append(temp_1)
-            all_tag_seqs_pred.append(temp_2)
-
-        f1 = f1_score(all_tag_seqs, all_tag_seqs_pred)
-        return f1
-
     def save(self, output_dir):
 
         # save model weights
