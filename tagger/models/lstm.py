@@ -78,6 +78,7 @@ class NerLSTM(NerBaseModel):
                 "embedding_dim": self.embedding_dim,
                 "hidden_dim": self.hidden_dim,
                 "lstm_num_layers": self.lstm_num_layers,
+                "bidirectional": self.bidirectional,
                 "tag_to_ix": self.tag_to_ix,
                 "model_type": self.__class__.__name__
         }
