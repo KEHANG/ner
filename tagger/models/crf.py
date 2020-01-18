@@ -239,14 +239,10 @@ class BiLSTM_CRF(NerBaseModel):
 
     def save(self, output_dir):
 
-        if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
         # save model weights
-        model_file = os.path.join(output_dir, 'model.pt')
-        torch.save(self.state_dict(), model_file)
-
+        super(BiLSTM_CRF, self).save(output_dir)
         # save hyper-parameters
-        hyper_params = {
+        model_params = {
                 "embedding_dim": self.embedding_dim,
                 "hidden_dim": self.hidden_dim,
                 "lstm_num_layers": self.lstm_num_layers,
@@ -256,5 +252,5 @@ class BiLSTM_CRF(NerBaseModel):
                 "model_type": self.__class__.__name__
         }
 
-        with open(os.path.join(output_dir, 'hyper_params.json'), 'w') as f_out:
-            json.dump(hyper_params, f_out, indent=3)
+        with open(os.path.join(output_dir, 'model_params.json'), 'w') as f_out:
+            json.dump(model_params, f_out, indent=3)
