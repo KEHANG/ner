@@ -2,6 +2,8 @@ import os
 import json
 import torch
 import torch.nn as nn
+from torch.nn.utils.rnn import (pack_padded_sequence,
+                                pad_packed_sequence)
 
 from tagger.models.base import NerBaseModel, NerHeads
 
@@ -15,15 +17,17 @@ class NerLSTM(NerBaseModel):
                  hidden_dim,
                  lstm_num_layers,
                  bidirectional,
-                 # for ner_heads
-                 tagset_size):
+                 # for ner_heads and
+                 # tag_to_ix
+                 tag_to_ix,
+                 **kwargs):
 
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
         self.lstm_num_layers = lstm_num_layers
         self.bidirectional = bidirectional
-        self.tagset_size = tagset_size
+        self.tagset_size = len(tag_to_ix)
 
         embedding_module = nn.Embedding(vocab_size, embedding_dim)
 
@@ -41,25 +45,28 @@ class NerLSTM(NerBaseModel):
 
         super(NerLSTM, self).__init__(embedding_module,
                                       encoder,
-                                      ner_heads)
+                                      ner_heads,
+                                      tag_to_ix)
 
-    @classmethod
-    def load(cls, model_path):
-        with open(os.path.join(model_path, 'model_params.json'), 'r') as f:
-            model_params = json.load(f)
+    def forward(self, sentences, lengths, tags_batch=None):
 
-        model = cls(vocab_size=model_params['vocab_size'],
-                    embedding_dim=model_params['embedding_dim'],
-                    hidden_dim=model_params['hidden_dim'],
-                    lstm_num_layers=model_params['lstm_num_layers'],
-                    bidirectional=model_params['bidirectional'],
-                    tagset_size=model_params['tagset_size'])
+        if self.training and tags_batch is None:
+            raise ValueError("In training mode, targets should be passed")
 
-        model.load_state_dict(torch.load(os.path.join(model_path, 'model.pt'),
-                                       map_location='cpu'))
-        model.eval()
+        embeds = self.embedding_module(sentences)
+        embeds_packed = pack_padded_sequence(embeds,
+                                             lengths,
+                                             batch_first=True)
+        packed_activations, _ = self.encoder(embeds_packed)
+        activations, _ = pad_packed_sequence(packed_activations,
+                                             batch_first=True)
+        outputs = self.ner_heads(activations)
 
-        return model
+        if self.training:
+            loss = nn.NLLLoss()
+            return loss(outputs.permute(0, 2, 1), tags_batch)
+
+        return torch.argmax(outputs, dim=2)
 
     def save(self, output_dir):
 
@@ -71,7 +78,8 @@ class NerLSTM(NerBaseModel):
                 "embedding_dim": self.embedding_dim,
                 "hidden_dim": self.hidden_dim,
                 "lstm_num_layers": self.lstm_num_layers,
-                "tagset_size": self.tagset_size,
+                "bidirectional": self.bidirectional,
+                "tag_to_ix": self.tag_to_ix,
                 "model_type": self.__class__.__name__
         }
 

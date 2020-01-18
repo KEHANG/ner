@@ -1,9 +1,8 @@
 {
-   "vocab_size": 30290,
    "embedding_dim": 10,
    "hidden_dim": 8,
    "lstm_num_layers": 1,
-   "bidirectional": false,
+   "vocab_size": 30290,
    "tag_to_ix": {
       "<PAD>": 0,
       "<START>": 1,
@@ -18,5 +17,5 @@
       "I-MISC": 10,
       "I-LOC": 11
    },
-   "model_type": "NerLSTM"
+   "model_type": "BiLSTM_CRF"
 }

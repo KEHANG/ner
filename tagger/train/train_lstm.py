@@ -49,7 +49,6 @@ def main(args):
                                      args.dset_file_dev,
                                      args.dset_file_test)
     dataloader, dataloader_dev, word_to_ix, tag_to_ix = data
-    ix_to_tag = {tag_to_ix[tag] : tag for tag in tag_to_ix}
     train_params = {
           "batch_size": args.batch_size,
           "learning_rate": args.lr,
@@ -64,14 +63,13 @@ def main(args):
     embedding_dim = args.embedding_dim
     hidden_dim = args.hidden_dim
     lstm_num_layers = 1
-    tagset_size = len(tag_to_ix)
     bidirectional = False
-    net = tagger.models.lstm.NerLSTM(vocab_size,
-                                     embedding_dim,
-                                     hidden_dim,
-                                     lstm_num_layers,
-                                     bidirectional,
-                                     tagset_size)
+    net = tagger.models.lstm.NerLSTM(vocab_size=vocab_size,
+                                     embedding_dim=embedding_dim,
+                                     hidden_dim=hidden_dim,
+                                     lstm_num_layers=lstm_num_layers,
+                                     bidirectional=bidirectional,
+                                     tag_to_ix=tag_to_ix)
 
     optimizer = optim.SGD(net.parameters(),
                           lr=args.lr,
@@ -85,7 +83,7 @@ def main(args):
         print("Epoch={0} Train loss: {1}".format(epoch+1, train_loss/nb_tr_steps))
 
         # evaluation step
-        f1 = net.f1_eval(dataloader_dev, ix_to_tag)
+        f1 = net.f1_eval(dataloader_dev)
         print('Epoch={0} Validation F1: {1:.3f}'.format(epoch+1, f1))
 
         if f1 > best_f1:

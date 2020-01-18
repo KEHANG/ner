@@ -5,18 +5,18 @@ import unittest
 from torch import optim
 from torch.utils.data import DataLoader
 
-import tagger.models.lstm
+import tagger.models.crf
 from tagger.loader import NERDataset, PadSequence
 
-class TestLSTM(unittest.TestCase):
+class TestBiLSTMCRF(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         test_base = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-        model_path = os.path.join(test_base, 'data', 'lstm')
+        model_path = os.path.join(test_base, 'data', 'bilstm_crf')
         # pretrained model is used to test
         # inference related functions/methods
-        cls.pretrained_model = tagger.models.lstm.NerLSTM.load(model_path)
+        cls.pretrained_model = tagger.models.crf.BiLSTM_CRF.load(model_path)
 
         with open(os.path.join(test_base, 'data', 'word_to_ix.json'), 'r') as f:
             word_to_ix = json.load(f)
@@ -26,10 +26,10 @@ class TestLSTM(unittest.TestCase):
 
         # fresh model is used to test
         # training related functions/methods
-        cls.fresh_model = tagger.models.lstm.NerLSTM(
+        cls.fresh_model = tagger.models.crf.BiLSTM_CRF(
                     vocab_size=14987, embedding_dim=10,
                     hidden_dim=8, lstm_num_layers=1,
-                    bidirectional=False, tag_to_ix=tag_to_ix)
+                    tag_to_ix=tag_to_ix)
 
         train_data = NERDataset(
                 root=os.path.join(test_base, 'data'),
@@ -47,6 +47,9 @@ class TestLSTM(unittest.TestCase):
 
     def test_forward(self):
 
+        # the sentence is
+        # ['CRICKET','-','Streak','TAKE', 'OVER','AT','TOP',
+        #  'AFTER','INNINGS','VICTORY','.']
         sentences = torch.tensor([[2173,676,14711,7302,2131,1778,
                                    14591,2340,12260,14041,9]])
         lengths = torch.tensor([11])

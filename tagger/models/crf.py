@@ -14,18 +14,22 @@ torch.manual_seed(1)
 
 class BiLSTM_CRF(NerBaseModel):
 
-    def __init__(self, vocab_size,
+    def __init__(self,
+                 # for embedding_module
+                 vocab_size,
+                 embedding_dim,
+                 # for encoder
+                 hidden_dim,
+                 lstm_num_layers,
+                 # for ner_heads and
+                 # tag_to_ix
                  tag_to_ix,
-                 embedding_dim, hidden_dim,
-                 lstm_num_layers=1, batch_size=2):
+                 **kwargs):
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
-        self.tag_to_ix = tag_to_ix
-        self.ix_to_tag = {self.tag_to_ix[tag] : tag for tag in self.tag_to_ix}
         self.tagset_size = len(tag_to_ix)
         self.lstm_num_layers = lstm_num_layers
-        self.batch_size = batch_size
 
         embedding_module = nn.Embedding(vocab_size, embedding_dim)
 
@@ -40,7 +44,8 @@ class BiLSTM_CRF(NerBaseModel):
 
         super(BiLSTM_CRF, self).__init__(embedding_module,
                                          encoder,
-                                         ner_heads)
+                                         ner_heads,
+                                         tag_to_ix)
 
         # Matrix of transition parameters.  Entry i,j is the score of
         # transitioning *to* i *from* j.
@@ -63,7 +68,7 @@ class BiLSTM_CRF(NerBaseModel):
         outputs = self.ner_heads(activations)
         return outputs
 
-    def _log_likelihood_numerator(self, logits, lengths, tags):
+    def _log_likelihood_numerator(self, logits, lengths, tags_batch):
         """
         calculate scores for tag sequences given logits. It's the logarithm of
         the numerator of P(s, x).
@@ -74,7 +79,7 @@ class BiLSTM_CRF(NerBaseModel):
             shape = (batch_size, sequence_length, num_tags)
         lengths : torch.Tensor, required.
             shape = (batch_size, )
-        tags: torch.Tensor, required.
+        tags_batch: torch.Tensor, required.
             shape = (batch_size, sequence_length)
 
         Outputs
@@ -85,16 +90,16 @@ class BiLSTM_CRF(NerBaseModel):
 
         # Transpose batch size and sequence dimensions:
         logits = logits.transpose(0, 1).contiguous()
-        tags = tags.transpose(0, 1).contiguous()
+        tags_batch = tags_batch.transpose(0, 1).contiguous()
 
         # Start with the transition scores from start_tag to the first tag in each input
         start_transitions = self.transitions.data[self.tag_to_ix[START_TAG], :]
-        scores = start_transitions.index_select(0, tags[0])
+        scores = start_transitions.index_select(0, tags_batch[0])
 
         # Add up the scores for the observed transitions and all the inputs but the last
         for i in range(sequence_length - 1):
             # Each is shape (batch_size,)
-            current_tag, next_tag = tags[i], tags[i+1]
+            current_tag, next_tag = tags_batch[i], tags_batch[i+1]
 
             # The scores for transitioning from current_tag to next_tag
             transition_score = self.transitions[current_tag.view(-1), next_tag.view(-1)]
@@ -111,7 +116,7 @@ class BiLSTM_CRF(NerBaseModel):
         # Transition from last state to "stop" state. To start with, we need to find the last tag
         # for each instance.
         last_tag_index = lengths - 1
-        last_tags = tags.gather(0, last_tag_index.view(1, batch_size)).squeeze(0)
+        last_tags = tags_batch.gather(0, last_tag_index.view(1, batch_size)).squeeze(0)
 
         # Compute score of transitioning to `stop_tag` from each "last tag".
         stop_transitions = self.transitions.data[:, self.tag_to_ix[STOP_TAG]]
@@ -179,13 +184,13 @@ class BiLSTM_CRF(NerBaseModel):
         # Finally we log_sum_exp along the num_tags dim, result is (batch_size,)
         return util.logsumexp(stops)
 
-    def forward(self, sentences, lengths, tags=None):
+    def forward(self, sentences, lengths, tags_batch=None):
         # run throught rnn layer of the model
         rnn_outputs = self.rnn_forward(sentences, lengths)
 
         if self.training:
             log_denominator = self._log_likelihood_denominator(rnn_outputs, lengths)
-            log_numerator = self._log_likelihood_numerator(rnn_outputs, lengths, tags)
+            log_numerator = self._log_likelihood_numerator(rnn_outputs, lengths, tags_batch)
 
             # return negative log likelihood
             return torch.sum(log_denominator - log_numerator)
@@ -213,48 +218,21 @@ class BiLSTM_CRF(NerBaseModel):
                                                 self.transitions
                                             )
                 best_paths.append(torch.tensor(viterbi_path[1:sequence_length+1]))
-            return best_paths
-
-    def f1_eval(self, dataloader):
-
-        self.eval()
-        all_tag_seqs = []
-        all_tag_seqs_pred = []
-        for batch in dataloader:
-          sentences, lengths, tag_seqs = batch
-          tag_seqs_pred= self.forward(sentences, lengths)
-          for i, tag_seq_pred in enumerate(tag_seqs_pred):
-            length = lengths[i]
-            temp_1 =  []
-            temp_2 = []
-            for j in range(length):
-              temp_1.append(self.ix_to_tag[tag_seqs[i][j].item()])
-              temp_2.append(self.ix_to_tag[tag_seq_pred[j].item()])
-
-            all_tag_seqs.append(temp_1)
-            all_tag_seqs_pred.append(temp_2)
-
-        f1 = f1_score(all_tag_seqs, all_tag_seqs_pred)
-        return f1
+            return torch.stack(best_paths)
 
     def save(self, output_dir):
 
-        if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
         # save model weights
-        model_file = os.path.join(output_dir, 'model.pt')
-        torch.save(self.state_dict(), model_file)
-
+        super(BiLSTM_CRF, self).save(output_dir)
         # save hyper-parameters
-        hyper_params = {
+        model_params = {
                 "embedding_dim": self.embedding_dim,
                 "hidden_dim": self.hidden_dim,
                 "lstm_num_layers": self.lstm_num_layers,
-                "batch_size": self.batch_size,
                 "vocab_size": self.vocab_size,
                 "tag_to_ix": self.tag_to_ix,
                 "model_type": self.__class__.__name__
         }
 
-        with open(os.path.join(output_dir, 'hyper_params.json'), 'w') as f_out:
-            json.dump(hyper_params, f_out, indent=3)
+        with open(os.path.join(output_dir, 'model_params.json'), 'w') as f_out:
+            json.dump(model_params, f_out, indent=3)
