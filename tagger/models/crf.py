@@ -212,7 +212,7 @@ class BiLSTM_CRF(NerBaseModel):
                                                 self.transitions
                                             )
                 best_paths.append(torch.tensor(viterbi_path[1:sequence_length+1]))
-            return best_paths
+            return torch.stack(best_paths)
 
     def f1_eval(self, dataloader):
 
