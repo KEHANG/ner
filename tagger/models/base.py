@@ -1,4 +1,5 @@
 import os
+import json
 import torch
 from tqdm import tqdm
 import torch.nn as nn
@@ -69,6 +70,19 @@ class NerBaseModel(nn.Module):
 
         f1 = f1_score(all_tag_seqs, all_tag_seqs_pred)
         return f1
+
+    @classmethod
+    def load(cls, model_path):
+        with open(os.path.join(model_path, 'model_params.json'), 'r') as f:
+            model_params = json.load(f)
+
+        model = cls(**model_params)
+
+        model.load_state_dict(torch.load(os.path.join(model_path, 'model.pt'),
+                                       map_location='cpu'))
+        model.eval()
+
+        return model
 
     def save(self, output_dir):
 
