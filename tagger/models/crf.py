@@ -63,7 +63,7 @@ class BiLSTM_CRF(NerBaseModel):
         outputs = self.ner_heads(activations)
         return outputs
 
-    def _log_likelihood_numerator(self, logits, lengths, tags):
+    def _log_likelihood_numerator(self, logits, lengths, tags_batch):
         """
         calculate scores for tag sequences given logits. It's the logarithm of
         the numerator of P(s, x).
@@ -74,7 +74,7 @@ class BiLSTM_CRF(NerBaseModel):
             shape = (batch_size, sequence_length, num_tags)
         lengths : torch.Tensor, required.
             shape = (batch_size, )
-        tags: torch.Tensor, required.
+        tags_batch: torch.Tensor, required.
             shape = (batch_size, sequence_length)
 
         Outputs
@@ -85,16 +85,16 @@ class BiLSTM_CRF(NerBaseModel):
 
         # Transpose batch size and sequence dimensions:
         logits = logits.transpose(0, 1).contiguous()
-        tags = tags.transpose(0, 1).contiguous()
+        tags_batch = tags_batch.transpose(0, 1).contiguous()
 
         # Start with the transition scores from start_tag to the first tag in each input
         start_transitions = self.transitions.data[self.tag_to_ix[START_TAG], :]
-        scores = start_transitions.index_select(0, tags[0])
+        scores = start_transitions.index_select(0, tags_batch[0])
 
         # Add up the scores for the observed transitions and all the inputs but the last
         for i in range(sequence_length - 1):
             # Each is shape (batch_size,)
-            current_tag, next_tag = tags[i], tags[i+1]
+            current_tag, next_tag = tags_batch[i], tags_batch[i+1]
 
             # The scores for transitioning from current_tag to next_tag
             transition_score = self.transitions[current_tag.view(-1), next_tag.view(-1)]
@@ -111,7 +111,7 @@ class BiLSTM_CRF(NerBaseModel):
         # Transition from last state to "stop" state. To start with, we need to find the last tag
         # for each instance.
         last_tag_index = lengths - 1
-        last_tags = tags.gather(0, last_tag_index.view(1, batch_size)).squeeze(0)
+        last_tags = tags_batch.gather(0, last_tag_index.view(1, batch_size)).squeeze(0)
 
         # Compute score of transitioning to `stop_tag` from each "last tag".
         stop_transitions = self.transitions.data[:, self.tag_to_ix[STOP_TAG]]
