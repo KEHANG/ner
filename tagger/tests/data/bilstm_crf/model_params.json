@@ -2,7 +2,6 @@
    "embedding_dim": 10,
    "hidden_dim": 8,
    "lstm_num_layers": 1,
-   "batch_size": 1,
    "vocab_size": 30290,
    "tag_to_ix": {
       "<PAD>": 0,
