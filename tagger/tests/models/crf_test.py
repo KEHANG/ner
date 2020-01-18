@@ -47,8 +47,8 @@ class TestBiLSTMCRF(unittest.TestCase):
 
     def test_forward(self):
 
-        # the sentence is 
-        # ['CRICKET','-','LEICESTERSHIRE','TAKE', 'OVER','AT','TOP',
+        # the sentence is
+        # ['CRICKET','-','Streak','TAKE', 'OVER','AT','TOP',
         #  'AFTER','INNINGS','VICTORY','.']
         sentences = torch.tensor([[2173,676,14711,7302,2131,1778,
                                    14591,2340,12260,14041,9]])
