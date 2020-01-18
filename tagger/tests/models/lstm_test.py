@@ -18,10 +18,10 @@ class TestLSTM(unittest.TestCase):
         # inference related functions/methods
         cls.pretrained_model = tagger.models.lstm.NerLSTM.load(model_path)
 
-        with open(os.path.join(test_base, 'data', 'word_to_ix.json'), 'r') as f:
+        with open(os.path.join(model_path, 'word_to_ix.json'), 'r') as f:
             word_to_ix = json.load(f)
 
-        with open(os.path.join(test_base, 'data', 'tag_to_ix.json'), 'r') as f:
+        with open(os.path.join(model_path, 'tag_to_ix.json'), 'r') as f:
             tag_to_ix = json.load(f)
 
         # fresh model is used to test
