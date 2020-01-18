@@ -27,9 +27,9 @@ class TestBiLSTMCRF(unittest.TestCase):
         # fresh model is used to test
         # training related functions/methods
         cls.fresh_model = tagger.models.crf.BiLSTM_CRF(
-                    vocab_size=14987, tag_to_ix=tag_to_ix,
-                    embedding_dim=10, hidden_dim=8, 
-                    lstm_num_layers=1)
+                    vocab_size=14987, embedding_dim=10,
+                    hidden_dim=8, lstm_num_layers=1,
+                    tag_to_ix=tag_to_ix)
 
         train_data = NERDataset(
                 root=os.path.join(test_base, 'data'),

@@ -18,18 +18,18 @@ class TestLSTM(unittest.TestCase):
         # inference related functions/methods
         cls.pretrained_model = tagger.models.lstm.NerLSTM.load(model_path)
 
-        # fresh model is used to test
-        # training related functions/methods
-        cls.fresh_model = tagger.models.lstm.NerLSTM(
-                    vocab_size=14987, embedding_dim=10,
-                    hidden_dim=8, lstm_num_layers=1,
-                    bidirectional=False, tagset_size=12)
-
         with open(os.path.join(test_base, 'data', 'word_to_ix.json'), 'r') as f:
             word_to_ix = json.load(f)
 
         with open(os.path.join(test_base, 'data', 'tag_to_ix.json'), 'r') as f:
             tag_to_ix = json.load(f)
+
+        # fresh model is used to test
+        # training related functions/methods
+        cls.fresh_model = tagger.models.lstm.NerLSTM(
+                    vocab_size=14987, embedding_dim=10,
+                    hidden_dim=8, lstm_num_layers=1,
+                    bidirectional=False, tag_to_ix=tag_to_ix)
 
         train_data = NERDataset(
                 root=os.path.join(test_base, 'data'),
