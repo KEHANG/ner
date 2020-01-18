@@ -10,11 +10,14 @@ class NerBaseModel(nn.Module):
     def __init__(self,
                  embedding_module,
                  encoder,
-                 ner_heads):
+                 ner_heads,
+                 tag_to_ix):
         super(NerBaseModel, self).__init__()
         self.embedding_module = embedding_module
         self.encoder = encoder
         self.ner_heads = ner_heads
+        self.tag_to_ix = tag_to_ix
+        self.ix_to_tag = {self.tag_to_ix[tag] : tag for tag in self.tag_to_ix}
 
     def forward(self, sentences, lengths, tags_batch=None):
 
@@ -49,7 +52,7 @@ class NerBaseModel(nn.Module):
 
         return train_loss, nb_tr_steps
 
-    def f1_eval(self, dataloader, ix_to_tag):
+    def f1_eval(self, dataloader):
 
         self.eval()
         all_tag_seqs = []
@@ -62,8 +65,8 @@ class NerBaseModel(nn.Module):
             temp_1 =  []
             temp_2 = []
             for j in range(length):
-              temp_1.append(ix_to_tag[tag_seqs[i][j].item()])
-              temp_2.append(ix_to_tag[tag_seq_pred[j].item()])
+              temp_1.append(self.ix_to_tag[tag_seqs[i][j].item()])
+              temp_2.append(self.ix_to_tag[tag_seq_pred[j].item()])
 
             all_tag_seqs.append(temp_1)
             all_tag_seqs_pred.append(temp_2)
