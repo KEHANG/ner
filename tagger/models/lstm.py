@@ -2,6 +2,8 @@ import os
 import json
 import torch
 import torch.nn as nn
+from torch.nn.utils.rnn import (pack_padded_sequence,
+                                pad_packed_sequence)
 
 from tagger.models.base import NerBaseModel, NerHeads
 
@@ -42,6 +44,26 @@ class NerLSTM(NerBaseModel):
         super(NerLSTM, self).__init__(embedding_module,
                                       encoder,
                                       ner_heads)
+
+    def forward(self, sentences, lengths, tags_batch=None):
+
+        if self.training and tags_batch is None:
+            raise ValueError("In training mode, targets should be passed")
+
+        embeds = self.embedding_module(sentences)
+        embeds_packed = pack_padded_sequence(embeds,
+                                             lengths,
+                                             batch_first=True)
+        packed_activations, _ = self.encoder(embeds_packed)
+        activations, _ = pad_packed_sequence(packed_activations,
+                                             batch_first=True)
+        outputs = self.ner_heads(activations)
+
+        if self.training:
+            loss = nn.NLLLoss()
+            return loss(outputs.permute(0, 2, 1), tags_batch)
+
+        return torch.argmax(outputs, dim=2)
 
     @classmethod
     def load(cls, model_path):

@@ -3,8 +3,6 @@ import torch
 from tqdm import tqdm
 import torch.nn as nn
 from seqeval.metrics import f1_score
-from torch.nn.utils.rnn import (pack_padded_sequence,
-                                pad_packed_sequence)
 
 class NerBaseModel(nn.Module):
 
@@ -19,23 +17,7 @@ class NerBaseModel(nn.Module):
 
     def forward(self, sentences, lengths, tags_batch=None):
 
-        if self.training and tags_batch is None:
-            raise ValueError("In training mode, targets should be passed")
-        
-        embeds = self.embedding_module(sentences)
-        embeds_packed = pack_padded_sequence(embeds,
-                                             lengths,
-                                             batch_first=True)
-        packed_activations, _ = self.encoder(embeds_packed)
-        activations, _ = pad_packed_sequence(packed_activations,
-                                             batch_first=True)
-        outputs = self.ner_heads(activations)
-
-        if self.training:
-            loss = nn.NLLLoss()
-            return loss(outputs.permute(0, 2, 1), tags_batch)
-
-        return torch.argmax(outputs, dim=2)
+        raise NotImplementedError("Subclasses should implement forward()!")
 
     def forward_on_instance(self, instance):
         """This method is mainly used by model2service."""

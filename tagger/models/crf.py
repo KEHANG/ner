@@ -179,13 +179,13 @@ class BiLSTM_CRF(NerBaseModel):
         # Finally we log_sum_exp along the num_tags dim, result is (batch_size,)
         return util.logsumexp(stops)
 
-    def forward(self, sentences, lengths, tags=None):
+    def forward(self, sentences, lengths, tags_batch=None):
         # run throught rnn layer of the model
         rnn_outputs = self.rnn_forward(sentences, lengths)
 
         if self.training:
             log_denominator = self._log_likelihood_denominator(rnn_outputs, lengths)
-            log_numerator = self._log_likelihood_numerator(rnn_outputs, lengths, tags)
+            log_numerator = self._log_likelihood_numerator(rnn_outputs, lengths, tags_batch)
 
             # return negative log likelihood
             return torch.sum(log_denominator - log_numerator)
