@@ -17,8 +17,9 @@ class NerLSTM(NerBaseModel):
                  hidden_dim,
                  lstm_num_layers,
                  bidirectional,
-                 # for ner_heads
-                 tagset_size,
+                 # for ner_heads and
+                 # tag_to_ix
+                 tag_to_ix,
                  **kwargs):
 
         self.vocab_size = vocab_size
@@ -26,7 +27,7 @@ class NerLSTM(NerBaseModel):
         self.hidden_dim = hidden_dim
         self.lstm_num_layers = lstm_num_layers
         self.bidirectional = bidirectional
-        self.tagset_size = tagset_size
+        self.tagset_size = len(tag_to_ix)
 
         embedding_module = nn.Embedding(vocab_size, embedding_dim)
 
@@ -44,7 +45,8 @@ class NerLSTM(NerBaseModel):
 
         super(NerLSTM, self).__init__(embedding_module,
                                       encoder,
-                                      ner_heads)
+                                      ner_heads,
+                                      tag_to_ix)
 
     def forward(self, sentences, lengths, tags_batch=None):
 
@@ -76,7 +78,7 @@ class NerLSTM(NerBaseModel):
                 "embedding_dim": self.embedding_dim,
                 "hidden_dim": self.hidden_dim,
                 "lstm_num_layers": self.lstm_num_layers,
-                "tagset_size": self.tagset_size,
+                "tag_to_ix": self.tag_to_ix,
                 "model_type": self.__class__.__name__
         }
 

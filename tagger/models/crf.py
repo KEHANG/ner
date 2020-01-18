@@ -14,16 +14,20 @@ torch.manual_seed(1)
 
 class BiLSTM_CRF(NerBaseModel):
 
-    def __init__(self, vocab_size,
-                 tag_to_ix,
-                 embedding_dim, hidden_dim,
+    def __init__(self,
+                 # for embedding_module
+                 vocab_size,
+                 embedding_dim,
+                 # for encoder
+                 hidden_dim,
                  lstm_num_layers,
+                 # for ner_heads and
+                 # tag_to_ix
+                 tag_to_ix,
                  **kwargs):
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
-        self.tag_to_ix = tag_to_ix
-        self.ix_to_tag = {self.tag_to_ix[tag] : tag for tag in self.tag_to_ix}
         self.tagset_size = len(tag_to_ix)
         self.lstm_num_layers = lstm_num_layers
 
@@ -40,7 +44,8 @@ class BiLSTM_CRF(NerBaseModel):
 
         super(BiLSTM_CRF, self).__init__(embedding_module,
                                          encoder,
-                                         ner_heads)
+                                         ner_heads,
+                                         tag_to_ix)
 
         # Matrix of transition parameters.  Entry i,j is the score of
         # transitioning *to* i *from* j.
