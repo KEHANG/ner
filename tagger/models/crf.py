@@ -236,6 +236,23 @@ class BiLSTM_CRF(NerBaseModel):
         f1 = f1_score(all_tag_seqs, all_tag_seqs_pred)
         return f1
 
+    @classmethod
+    def load(cls, model_path):
+        with open(os.path.join(model_path, 'model_params.json'), 'r') as f:
+            model_params = json.load(f)
+
+        model = cls(vocab_size=model_params['vocab_size'],
+                    tag_to_ix=model_params['tag_to_ix'],
+                    embedding_dim=model_params['embedding_dim'],
+                    hidden_dim=model_params['hidden_dim'],
+                    lstm_num_layers=model_params['lstm_num_layers'])
+
+        model.load_state_dict(torch.load(os.path.join(model_path, 'model.pt'),
+                                       map_location='cpu'))
+        model.eval()
+
+        return model
+
     def save(self, output_dir):
 
         # save model weights
