@@ -7,17 +7,17 @@ from torch.nn.utils.rnn import (pack_padded_sequence,
                                 pad_packed_sequence)
 
 import tagger.models.util as util
+from tagger.models.base import NerBaseModel
 from tagger.constant import START_TAG, STOP_TAG
 
 torch.manual_seed(1)
 
-class BiLSTM_CRF(nn.Module):
+class BiLSTM_CRF(NerBaseModel):
 
     def __init__(self, vocab_size,
                  tag_to_ix,
                  embedding_dim, hidden_dim,
                  lstm_num_layers=1, batch_size=2):
-        super(BiLSTM_CRF, self).__init__()
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
@@ -27,15 +27,20 @@ class BiLSTM_CRF(nn.Module):
         self.lstm_num_layers = lstm_num_layers
         self.batch_size = batch_size
 
-        self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
-        self.lstm = nn.LSTM(embedding_dim,
-                            hidden_dim // 2,
-                            num_layers=self.lstm_num_layers,
-                            bidirectional=True,
-                            batch_first=True)
+        embedding_module = nn.Embedding(vocab_size, embedding_dim)
+
+        encoder = nn.LSTM(embedding_dim,
+                          hidden_dim // 2,
+                          num_layers=self.lstm_num_layers,
+                          bidirectional=True,
+                          batch_first=True)
 
         # Maps the output of the LSTM into tag space.
-        self.hidden2tag = nn.Linear(hidden_dim, self.tagset_size)
+        ner_heads = nn.Linear(hidden_dim, self.tagset_size)
+
+        super(BiLSTM_CRF, self).__init__(embedding_module,
+                                         encoder,
+                                         ner_heads)
 
         # Matrix of transition parameters.  Entry i,j is the score of
         # transitioning *to* i *from* j.
@@ -48,14 +53,14 @@ class BiLSTM_CRF(nn.Module):
         self.transitions.data[tag_to_ix[STOP_TAG], :] = -10000
 
     def rnn_forward(self, sentences, lengths):
-        embeds = self.word_embeds(sentences)
+        embeds = self.embedding_module(sentences)
         embeds_packed = pack_padded_sequence(embeds,
                                              lengths,
                                              batch_first=True)
-        packed_activations, _ = self.lstm(embeds_packed)
+        packed_activations, _ = self.encoder(embeds_packed)
         activations, _ = pad_packed_sequence(packed_activations,
                                              batch_first=True)
-        outputs = self.hidden2tag(activations)
+        outputs = self.ner_heads(activations)
         return outputs
 
     def _log_likelihood_numerator(self, logits, lengths, tags):
