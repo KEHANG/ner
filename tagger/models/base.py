@@ -3,7 +3,7 @@ import json
 import torch
 from tqdm import tqdm
 import torch.nn as nn
-from seqeval.metrics import f1_score
+from externals.metrics import f1_score
 
 class NerBaseModel(nn.Module):
 

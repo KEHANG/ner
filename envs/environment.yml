@@ -12,5 +12,3 @@ dependencies:
   - nose
   - coverage
   - transformers
-  - pip:
-      - seqeval
