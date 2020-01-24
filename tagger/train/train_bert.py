@@ -4,7 +4,7 @@ import torch
 from torch import optim
 from datetime import datetime
 from tqdm import trange
-from pytorch_pretrained_bert import BertTokenizer
+from transformers import BertTokenizer
 
 import tagger.loader
 import tagger.models.bert
@@ -70,7 +70,7 @@ def main(args):
                                                       mode='dev')
 
     # build model
-    net = tagger.models.bert.BertNER.from_pretrained('bert-base-cased', tag_to_ix)
+    net = tagger.models.bert.BertNER.from_pretrained('bert-base-cased', tag_to_ix=tag_to_ix)
     
     # configurate optimizer
     param_optimizer = list(net.named_parameters())

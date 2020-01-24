@@ -4,12 +4,13 @@ import torch
 from tqdm import tqdm
 import torch.nn.functional as F
 from seqeval.metrics import f1_score
-from pytorch_pretrained_bert import BertForTokenClassification
+from transformers import BertForTokenClassification
 
 class BertNER(BertForTokenClassification):
     """Use BertForTokenClassification for NER"""
     def __init__(self, config, tag_to_ix):
-        super(BertNER, self).__init__(config, len(tag_to_ix))
+        config.num_labels = len(tag_to_ix)
+        super(BertNER, self).__init__(config)
         self.tag_to_ix = tag_to_ix
         self.ix_to_tag = {self.tag_to_ix[tag] : tag for tag in self.tag_to_ix}
 
@@ -23,9 +24,10 @@ class BertNER(BertForTokenClassification):
           batch = tuple(t.to(device) for t in batch)
           b_input_ids, b_input_mask, b_labels = batch
           # forward pass
-          loss = self.forward(b_input_ids, token_type_ids=None,
+          outputs = self.forward(b_input_ids, token_type_ids=None,
                               attention_mask=b_input_mask, labels=b_labels)
           # backward pass
+          loss = outputs[0]
           loss.backward()
           # track train loss
           train_loss += loss.item()

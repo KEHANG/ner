@@ -11,6 +11,6 @@ dependencies:
   - m2s
   - nose
   - coverage
+  - transformers
   - pip:
       - seqeval
-      - pytorch_pretrained_bert
