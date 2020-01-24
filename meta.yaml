@@ -12,10 +12,10 @@ build:
 
 requirements:
   build:
-    - python=3
+    - python=3.7
 
   run:
-    - python=3
+    - python=3.7
     - pytorch
     - tqdm
     - m2s
