@@ -2,7 +2,6 @@ import os
 import json
 import torch
 import torch.nn as nn
-from seqeval.metrics import f1_score
 from torch.nn.utils.rnn import (pack_padded_sequence,
                                 pad_packed_sequence)
 
