@@ -1,0 +1,36 @@
+# For conda build
+package:
+  name: ner
+  version: {{ environ.get('GIT_DESCRIBE_TAG', '0') }}
+
+source:
+  path: .
+
+build:
+  number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+  noarch: generic
+
+requirements:
+  build:
+    - python=3
+
+  run:
+    - python=3
+    - pytorch
+    - tqdm
+    - m2s
+    - tqdm
+    - transformers
+
+test:
+  source_files:
+    - '*'
+  requires:
+    - nose
+  imports:
+    - tagger
+
+about:
+  home: https://github.com/KEHANG/ner
+  license: MIT
+  summary: "A Deep Learning Based Name Entity Recognition Tagger"
